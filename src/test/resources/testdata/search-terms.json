@@ -1,0 +1,17 @@
+{
+  "commonSearchTerm": "vase",
+  "secondarySearchTerm": "swatch",
+  "rareSearchTerm": "zzzzmakerworldunlikelyterm",
+  "pinnedModelPath": "/en/models/544229",
+  "expectedHeaderLinks": [
+    "Models",
+    "Contests",
+    "Crowdfunding",
+    "MakerLab"
+  ],
+  "guestLabels": [
+    "Sign In",
+    "Login",
+    "Log In"
+  ]
+}

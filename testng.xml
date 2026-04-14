@@ -1,0 +1,24 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<suite name="MakerWorld Regression Suite" verbose="1" parallel="false">
+    <test name="MakerWorld Public And Auth Coverage">
+        <groups>
+            <run>
+                <include name="smoke"/>
+                <include name="regression"/>
+                <include name="content"/>
+                <include name="media"/>
+                <include name="auth"/>
+            </run>
+        </groups>
+        <classes>
+            <class name="com.makerworld.tests.HomePageTests"/>
+            <class name="com.makerworld.tests.SearchTests"/>
+            <class name="com.makerworld.tests.ModelsPageTests"/>
+            <class name="com.makerworld.tests.ModelDetailTests"/>
+            <class name="com.makerworld.tests.ContestsPageTests"/>
+            <class name="com.makerworld.tests.ContestDetailTests"/>
+            <class name="com.makerworld.tests.CrowdfundingTests"/>
+            <class name="com.makerworld.tests.AuthAndAccountTests"/>
+        </classes>
+    </test>
+</suite>

@@ -1,0 +1,14 @@
+MW_BASE_URL=https://makerworld.com
+MW_BROWSER=chrome
+MW_HEADLESS=false
+MW_TIMEOUT_SECONDS=20
+MW_CHROME_BINARY=/Applications/Google Chrome.app/Contents/MacOS/Google Chrome
+MW_CHROMEDRIVER_PATH=
+MW_EMAIL=
+MW_PASSWORD=
+MW_ENABLE_AUTH_SUITE=false
+MW_AUTH_MODE=manual_checkpoint
+MW_COOKIE_FILE=src/test/resources/cookies/makerworld-cookies.json
+MW_CHROME_USER_DATA_DIR=
+MW_CHROME_PROFILE_DIR=Default
+MW_SCREENSHOT_ON_FAILURE=true

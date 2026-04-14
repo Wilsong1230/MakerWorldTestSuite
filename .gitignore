@@ -1,0 +1,9 @@
+target/
+.idea/
+.vscode/
+.DS_Store
+*.log
+test-output/
+screenshots/
+src/test/resources/config.properties
+src/test/resources/cookies/

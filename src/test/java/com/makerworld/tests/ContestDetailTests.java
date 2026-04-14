@@ -1,0 +1,71 @@
+package com.makerworld.tests;
+
+import com.makerworld.base.BaseTest;
+import com.makerworld.pages.ContestDetailPage;
+import com.makerworld.pages.ContestsPage;
+import com.makerworld.pages.ModelDetailPage;
+import org.testng.Assert;
+import org.testng.SkipException;
+import org.testng.annotations.Test;
+
+public class ContestDetailTests extends BaseTest {
+    @Test(groups = {"smoke", "regression", "content"})
+    public void contestDetailShowsHeaderAndBreadcrumb() {
+        ContestDetailPage detailPage = new ContestsPage(driver, config).open().openFirstContest();
+
+        if (detailPage.isSecurityVerificationPage()) {
+            throw new SkipException("MakerWorld security verification blocked contest detail assertions.");
+        }
+
+        Assert.assertTrue(detailPage.isLoaded(), "Expected contest detail page to load.");
+        Assert.assertFalse(detailPage.heading().isBlank(), "Expected contest heading.");
+        Assert.assertTrue(detailPage.hasBreadcrumb() || driver.getCurrentUrl().contains("/contests"), "Expected contest breadcrumb or contest-context URL.");
+    }
+
+    @Test(groups = {"regression", "content"})
+    public void contestEntriesSectionLoadsContent() {
+        ContestDetailPage detailPage = new ContestsPage(driver, config).open().openFirstContest();
+
+        if (detailPage.isSecurityVerificationPage()) {
+            throw new SkipException("MakerWorld security verification blocked contest entry assertions.");
+        }
+
+        Assert.assertTrue(detailPage.entriesSectionLoaded(), "Expected contest entries content to be present.");
+    }
+
+    @Test(groups = {"regression", "content"})
+    public void linkedModelFromContestOpensModelDetail() {
+        ContestDetailPage detailPage = new ContestsPage(driver, config).open().openFirstContest();
+        if (detailPage.isSecurityVerificationPage()) {
+            throw new SkipException("MakerWorld security verification blocked contest entry navigation.");
+        }
+        ModelDetailPage modelDetailPage = detailPage.openFirstEntryModel();
+
+        if (modelDetailPage.isSecurityVerificationPage()) {
+            throw new SkipException("MakerWorld security verification blocked contest-linked model detail navigation.");
+        }
+
+        Assert.assertTrue(modelDetailPage.isLoaded(), "Expected contest entry model to open a model detail page.");
+        Assert.assertFalse(modelDetailPage.modelTitle().isBlank(), "Expected opened model detail to have a title.");
+    }
+
+    @Test(groups = {"regression", "content"})
+    public void contestRulesLinksStayOnMakerWorld() {
+        ContestDetailPage detailPage = new ContestsPage(driver, config).open().openFirstContest();
+
+        if (detailPage.isSecurityVerificationPage()) {
+            throw new SkipException("MakerWorld security verification blocked contest rules assertions.");
+        }
+
+        Assert.assertTrue(detailPage.rulesLinksStayWithinMakerWorld(), "Expected rules links to remain on MakerWorld.");
+    }
+
+    @Test(groups = {"regression", "content"})
+    public void browserBackReturnsToContestsListing() {
+        new ContestsPage(driver, config).open().openFirstContest();
+
+        driver.navigate().back();
+
+        Assert.assertTrue(driver.getCurrentUrl().contains("/contests"), "Expected browser back to return to contests listing.");
+    }
+}

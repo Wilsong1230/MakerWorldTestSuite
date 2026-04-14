@@ -1,0 +1,54 @@
+package com.makerworld.pages;
+
+import com.makerworld.core.ConfigManager;
+import com.makerworld.utils.AssertionUtils;
+import com.makerworld.utils.CardSnapshot;
+import java.util.Optional;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+
+public class ContestDetailPage extends BasePage {
+    public ContestDetailPage(WebDriver driver, ConfigManager config) {
+        super(driver, config);
+    }
+
+    public boolean isLoaded() {
+        return AssertionUtils.looksLikeContestDetailUrl(currentUrl()) && !heading().isBlank();
+    }
+
+    public String heading() {
+        return maybeVisible(By.cssSelector("main h1"), By.xpath("//h1[normalize-space()]"))
+            .map(this::textOf)
+            .orElse("");
+    }
+
+    public boolean hasBreadcrumb() {
+        return exists(
+            By.xpath("//nav//*[contains(.,'Contests')]"),
+            By.xpath("//a[contains(@href,'/contests')]")
+        );
+    }
+
+    public boolean entriesSectionLoaded() {
+        return pageContainsText("Entries") || !modelLinks().isEmpty();
+    }
+
+    public Optional<CardSnapshot> firstEntryModelCard() {
+        return modelLinks().stream().findFirst().map(this::buildCardSnapshot);
+    }
+
+    public ModelDetailPage openFirstEntryModel() {
+        WebElement link = modelLinks().stream().findFirst()
+            .orElseThrow(() -> new IllegalStateException("No model link found in contest detail."));
+        driver.get(hrefOf(link));
+        waitForPageReady();
+        return new ModelDetailPage(driver, config);
+    }
+
+    public boolean rulesLinksStayWithinMakerWorld() {
+        return visibleAnchors().stream()
+            .filter(anchor -> hrefOf(anchor).contains("rules"))
+            .allMatch(anchor -> AssertionUtils.makerWorldOwnedUrl(hrefOf(anchor)));
+    }
+}
