@@ -1,9 +1,5 @@
 package com.makerworld.pages;
 
-import com.makerworld.core.ConfigManager;
-import com.makerworld.core.WaitUtils;
-import com.makerworld.utils.AssertionUtils;
-import com.makerworld.utils.CardSnapshot;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -12,6 +8,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.Keys;
@@ -23,6 +20,13 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
+
+import com.makerworld.core.ConfigManager;
+import com.makerworld.core.WaitUtils;
+import com.makerworld.utils.AssertionUtils;
+import com.makerworld.utils.CardSnapshot;
+import com.twocaptcha.TwoCaptcha;
+import com.twocaptcha.captcha.Turnstile;
 
 public abstract class BasePage {
     protected final WebDriver driver;
@@ -43,6 +47,10 @@ public abstract class BasePage {
 
     protected void openPath(String path) {
         driver.get(resolveUrl(path));
+        // PATCH: Solve if Cloudflare block is detected
+        if (isSecurityVerificationPage()) {
+            solveCloudflareChallenge();
+        }
         waitForPageReady();
         acceptCookiesIfPresent();
     }
@@ -365,4 +373,37 @@ public abstract class BasePage {
             return false;
         }
     }
+    private void solveCloudflareChallenge() {
+    String apiKey = config.getTwoCaptchaKey();
+    if (apiKey.isBlank()) {
+        System.err.println("Cloudflare detected but MW_2CAPTCHA_KEY is not configured.");
+        return;
+    }
+
+    try {
+        System.out.println("Cloudflare Challenge detected. Solving via 2Captcha...");
+        TwoCaptcha solver = new TwoCaptcha(apiKey);
+        
+        Turnstile captcha = new Turnstile();
+        captcha.setSiteKey("0x4AAAAAAAPGX7kh4AO_iqCW"); // Sitekey found in MakerWorld scripts
+        captcha.setUrl(currentUrl());
+        
+        // Pass the browser User-Agent to match fingerprints
+        String ua = (String) js.executeScript("return navigator.userAgent;");
+        captcha.setUserAgent(ua);
+
+        solver.solve(captcha);
+        String token = captcha.getCode();
+
+        // Inject the token and trigger the callback
+        js.executeScript("document.getElementsByName('cf-turnstile-response')[0].value='" + token + "';");
+        js.executeScript("if (window.turnstile) { turnstile.callback('" + token + "'); }");
+        
+        // Wait for the challenge to be cleared from the UI
+        wait.until(ExpectedConditions.not(ExpectedConditions.urlContains("challenge")));
+        System.out.println("Cloudflare Challenge solved successfully.");
+    } catch (Exception e) {
+        System.err.println("Failed to solve Cloudflare: " + e.getMessage());
+    }
+}
 }

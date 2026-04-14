@@ -1,5 +1,11 @@
 package com.makerworld.base;
 
+import org.openqa.selenium.WebDriver;
+import org.testng.SkipException;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Listeners;
+
 import com.makerworld.auth.AuthConfig;
 import com.makerworld.auth.AuthStateProvider;
 import com.makerworld.auth.AuthVerifier;
@@ -10,11 +16,10 @@ import com.makerworld.core.ConfigManager;
 import com.makerworld.core.DriverFactory;
 import com.makerworld.listeners.TestListener;
 import com.makerworld.utils.TestDataLoader;
-import org.openqa.selenium.WebDriver;
-import org.testng.SkipException;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Listeners;
+import com.twocaptcha.TwoCaptcha;
+
+
+
 
 @Listeners(TestListener.class)
 public abstract class BaseTest {
@@ -25,12 +30,17 @@ public abstract class BaseTest {
     protected TestDataLoader testData;
     protected AuthConfig authConfig;
     protected WebDriver driver;
+    protected TwoCaptcha solver;
 
     @BeforeMethod(alwaysRun = true)
     public void setUp() {
         config = new ConfigManager();
         testData = new TestDataLoader();
         authConfig = AuthConfig.from(config);
+        String apiKey = config.getTwoCaptchaKey();
+        if (!apiKey.isBlank()) {
+            solver = new TwoCaptcha(apiKey);
+        }
         driver = DriverFactory.createDriver(config);
         THREAD_DRIVER.set(driver);
         THREAD_CONFIG.set(config);

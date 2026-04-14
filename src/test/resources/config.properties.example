@@ -12,3 +12,4 @@ MW_COOKIE_FILE=src/test/resources/cookies/makerworld-cookies.json
 MW_CHROME_USER_DATA_DIR=
 MW_CHROME_PROFILE_DIR=Default
 MW_SCREENSHOT_ON_FAILURE=true
+MW_2CAPTCHA_KEY=0852c6ea1062ecdf5a1c662ada672dc9

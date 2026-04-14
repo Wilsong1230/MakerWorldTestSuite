@@ -1,7 +1,8 @@
 package com.makerworld.auth;
 
-import com.makerworld.core.ConfigManager;
 import java.nio.file.Path;
+
+import com.makerworld.core.ConfigManager;
 
 public record AuthConfig(
     boolean authSuiteEnabled,
@@ -32,7 +33,7 @@ public record AuthConfig(
 
     public static AuthConfig from(ConfigManager config) {
         return new AuthConfig(
-            config.getBoolean("MW_ENABLE_AUTH_SUITE", false),
+            config.getBoolean("MW_ENABLE_AUTH_SUITE", true),
             AuthMode.from(config.getString("MW_AUTH_MODE", "manual_checkpoint")),
             config.getEmail(),
             config.getPassword(),

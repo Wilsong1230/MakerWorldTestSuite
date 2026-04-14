@@ -15,6 +15,10 @@ public class ConfigManager {
     public ConfigManager() {
         loadClasspathProperties("config.properties");
     }
+        // Add to wilsong1230/makerworldtestsuite/.../core/ConfigManager.java
+    public String getTwoCaptchaKey() {
+        return getString("MW_2CAPTCHA_KEY", "");
+    }
 
     private void loadClasspathProperties(String name) {
         try (InputStream stream = getClass().getClassLoader().getResourceAsStream(name)) {
