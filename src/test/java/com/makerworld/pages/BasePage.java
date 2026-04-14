@@ -46,7 +46,10 @@ public abstract class BasePage {
     }
 
     protected void openPath(String path) {
-        driver.get(resolveUrl(path));
+        try {
+            driver.get(resolveUrl(path));
+        } catch (TimeoutException e) {
+        }
         // PATCH: Solve if Cloudflare block is detected
         if (isSecurityVerificationPage()) {
             solveCloudflareChallenge();
@@ -74,8 +77,7 @@ public abstract class BasePage {
     }
 
     protected void acceptCookiesIfPresent() {
-        List<WebElement> buttons = driver.findElements(By.xpath(
-            "//button[contains(translate(normalize-space(.),'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),'accept all')]"
+        List<WebElement> buttons = driver.findElements(By.xpath("//button[contains(translate(normalize-space(.),'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),'accept all')]"
         ));
         for (WebElement button : buttons) {
             try {
@@ -374,36 +376,52 @@ public abstract class BasePage {
         }
     }
     private void solveCloudflareChallenge() {
-    String apiKey = config.getTwoCaptchaKey();
+    String apiKey = config.getString("MW_2CAPTCHA_KEY", "");
     if (apiKey.isBlank()) {
-        System.err.println("Cloudflare detected but MW_2CAPTCHA_KEY is not configured.");
+        System.err.println("Cloudflare detected, but MW_2CAPTCHA_KEY is missing from config.properties");
         return;
     }
 
     try {
-        System.out.println("Cloudflare Challenge detected. Solving via 2Captcha...");
+        System.out.println("Solving Cloudflare Turnstile via 2Captcha...");
         TwoCaptcha solver = new TwoCaptcha(apiKey);
         
+        // Dynamically grab the sitekey from the page environment if possible, fallback to known key
+        String siteKey = (String) js.executeScript(
+            "return window.publicEnv ? window.publicEnv.NEXT_PUBLIC_CF_TURNSTILE_SITE_KEY : '0x4AAAAAAAPGX7kh4AO_iqCW';"
+        );
+
         Turnstile captcha = new Turnstile();
-        captcha.setSiteKey("0x4AAAAAAAPGX7kh4AO_iqCW"); // Sitekey found in MakerWorld scripts
+        captcha.setSiteKey(siteKey);
         captcha.setUrl(currentUrl());
         
-        // Pass the browser User-Agent to match fingerprints
+        // Match browser fingerprint
         String ua = (String) js.executeScript("return navigator.userAgent;");
         captcha.setUserAgent(ua);
 
         solver.solve(captcha);
         String token = captcha.getCode();
 
-        // Inject the token and trigger the callback
-        js.executeScript("document.getElementsByName('cf-turnstile-response')[0].value='" + token + "';");
-        js.executeScript("if (window.turnstile) { turnstile.callback('" + token + "'); }");
+        // 1. Inject the token
+        js.executeScript(
+            "var input = document.querySelector('[name=\"cf-turnstile-response\"]');" +
+            "if (input) { input.value = '" + token + "'; }"
+        );
         
-        // Wait for the challenge to be cleared from the UI
+        // 2. Trigger the callback for React/Next.js to process the token
+        js.executeScript(
+            "if (window.turnstile) { " +
+            "  try { turnstile.callback('" + token + "'); } catch(e) {} " +
+            "}"
+        );
+        
+        // Wait for the URL to change away from the challenge endpoint
         wait.until(ExpectedConditions.not(ExpectedConditions.urlContains("challenge")));
-        System.out.println("Cloudflare Challenge solved successfully.");
+        pauseBriefly(); // Allow frontend state to settle
+        
+        System.out.println("Cloudflare bypassed successfully.");
     } catch (Exception e) {
-        System.err.println("Failed to solve Cloudflare: " + e.getMessage());
+        System.err.println("2Captcha failed: " + e.getMessage());
     }
 }
 }

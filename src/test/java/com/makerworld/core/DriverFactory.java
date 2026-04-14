@@ -1,13 +1,15 @@
 package com.makerworld.core;
 
-import com.makerworld.auth.AuthConfig;
 import java.io.File;
 import java.time.Duration;
+
 import org.openqa.selenium.PageLoadStrategy;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.safari.SafariDriver;
+
+import com.makerworld.auth.AuthConfig;
 
 public final class DriverFactory {
     private DriverFactory() {
@@ -23,10 +25,14 @@ public final class DriverFactory {
 
     private static WebDriver createChromeDriver(ConfigManager config, AuthConfig authConfig) {
         ChromeOptions options = new ChromeOptions();
-        options.setPageLoadStrategy(PageLoadStrategy.NORMAL);
+        options.setPageLoadStrategy(PageLoadStrategy.EAGER);
         options.addArguments("--window-size=1600,1200");
         options.addArguments("--disable-notifications");
         options.addArguments("--lang=en-US");
+
+        options.addArguments("--disable-blink-features=AutomationControlled");
+        options.setExperimentalOption("excludeSwitches", java.util.List.of("enable-automation"));
+        options.setExperimentalOption("useAutomationExtension", false);
 
         if (config.isHeadless()) {
             options.addArguments("--headless=new");
