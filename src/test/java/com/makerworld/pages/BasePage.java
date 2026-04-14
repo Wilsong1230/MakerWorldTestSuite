@@ -157,12 +157,24 @@ public abstract class BasePage {
     }
 
     public boolean isSecurityVerificationPage() {
-        String url = currentUrl().toLowerCase();
-        return pageContainsText("Performing security verification")
-            || pageContainsText("security verification")
+     String url = currentUrl().toLowerCase();
+    
+    // Quick DOM check for the Turnstile widget
+    if (!driver.findElements(By.className("cf-turnstile")).isEmpty()) {
+        return true;
+    }
+
+    try {
+        String pageText = driver.findElement(By.tagName("body")).getText().toLowerCase();
+        return pageText.contains("security verification")
+            || pageText.contains("just a moment")
+            || pageText.contains("verify you are human")
             || url.contains("challenge")
             || url.contains("turnstile");
+    } catch (Exception e) {
+        return false; // If body isn't available, we can't check text
     }
+}
 
     protected void safeClick(WebElement element) {
         scrollIntoView(element);
@@ -415,9 +427,14 @@ public abstract class BasePage {
             "}"
         );
         
-        // Wait for the URL to change away from the challenge endpoint
-        wait.until(ExpectedConditions.not(ExpectedConditions.urlContains("challenge")));
-        pauseBriefly(); // Allow frontend state to settle
+     // CRITICAL FIX: Wait for the Turnstile iframe/widget to leave the DOM
+        System.out.println("Token injected. Waiting for Cloudflare to clear...");
+        wait.until(ExpectedConditions.invisibilityOfElementLocated(By.className("cf-turnstile")));
+        
+        // Also wait until our detection method returns false
+        wait.until(webDriver -> !isSecurityVerificationPage());
+        
+        pauseBriefly(); // Allow MakerWorld's frontend state to fully settle
         
         System.out.println("Cloudflare bypassed successfully.");
     } catch (Exception e) {
