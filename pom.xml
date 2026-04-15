@@ -67,6 +67,12 @@
                     <suiteXmlFiles>
                         <suiteXmlFile>testng.xml</suiteXmlFile>
                     </suiteXmlFiles>
+                    <properties>
+                        <property>
+                            <name>usedefaultlisteners</name>
+                            <value>false</value>
+                        </property>
+                    </properties>
                     <systemPropertyVariables>
                         <file.encoding>${project.build.sourceEncoding}</file.encoding>
                     </systemPropertyVariables>

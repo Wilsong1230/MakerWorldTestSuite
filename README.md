@@ -48,12 +48,15 @@ Required local env for solver-backed runs:
 
 ```bash
 export MW_2CAPTCHA_KEY=your_2captcha_api_key
+export MW_TURNSTILE_SITEKEY=optional_explicit_turnstile_sitekey
+export MW_DRIVER_LIFECYCLE=per_class
 export MW_2CAPTCHA_TIMEOUT_SECONDS=90
 export MW_2CAPTCHA_POLL_SECONDS=3
 ```
 
 Troubleshooting:
 - `MW_2CAPTCHA_KEY is missing` means solver fallback is unavailable.
+- `Unable to resolve Turnstile sitekey from page` means runtime extraction failed; set `MW_TURNSTILE_SITEKEY` explicitly for your environment.
 - If challenge persists after solve timeout, increase `MW_2CAPTCHA_TIMEOUT_SECONDS` and rerun.
 - Keep `MW_HEADLESS=false` for local diagnosis when challenge behavior changes.
 

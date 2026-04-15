@@ -3,9 +3,15 @@ package com.makerworld.tests;
 import com.makerworld.base.BaseTest;
 import java.time.Duration;
 import org.testng.Assert;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 public class AuthAndAccountTests extends BaseTest {
+    @BeforeClass(alwaysRun = true)
+    public void bootstrapAuthOncePerClass() {
+        bootstrapAuthenticatedSessionOrSkip();
+    }
+
     private void assertChallengeHealthy(String context) {
         String status = lastChallengeStatus();
         Assert.assertFalse(
@@ -16,7 +22,6 @@ public class AuthAndAccountTests extends BaseTest {
 
     @Test(groups = {"smoke", "regression", "auth"})
     public void authBootstrapProducesAuthenticatedMarkers() {
-        bootstrapAuthenticatedSessionOrSkip();
         openHomePageAndStabilize("authenticated home page");
 
         assertChallengeHealthy("auth bootstrap");
@@ -25,7 +30,6 @@ public class AuthAndAccountTests extends BaseTest {
 
     @Test(groups = {"regression", "auth"})
     public void authenticatedUserCanReachAccountSurface() {
-        bootstrapAuthenticatedSessionOrSkip();
         openHomePageAndStabilize("authenticated account surface");
 
         assertChallengeHealthy("account surface");
@@ -35,7 +39,6 @@ public class AuthAndAccountTests extends BaseTest {
 
     @Test(groups = {"regression", "auth", "content"})
     public void authenticatedModelPageExposesGatedActionSurface() {
-        bootstrapAuthenticatedSessionOrSkip();
         openModelDetailPageAndStabilize(pinnedModelPath(), "authenticated model detail");
 
         assertChallengeHealthy("authenticated model detail");
@@ -46,7 +49,6 @@ public class AuthAndAccountTests extends BaseTest {
 
     @Test(groups = {"regression", "auth"})
     public void authenticatedSessionSurvivesRefresh() {
-        bootstrapAuthenticatedSessionOrSkip();
         openHomePageAndStabilize("authenticated refresh baseline");
 
         assertChallengeHealthy("refresh baseline");
@@ -59,7 +61,6 @@ public class AuthAndAccountTests extends BaseTest {
 
     @Test(groups = {"regression", "auth"})
     public void logoutReturnsGuestVisibleControls() {
-        bootstrapAuthenticatedSessionOrSkip();
         openHomePageAndStabilize("authenticated logout flow");
 
         assertChallengeHealthy("logout flow");
@@ -70,7 +71,6 @@ public class AuthAndAccountTests extends BaseTest {
 
     @Test(groups = {"regression", "auth"})
     public void challengeStateIsResolvedAfterAuthenticatedNavigation() {
-        bootstrapAuthenticatedSessionOrSkip();
         openModelDetailPageAndStabilize(pinnedModelPath(), "challenge-state validation");
 
         String status = lastChallengeStatus();

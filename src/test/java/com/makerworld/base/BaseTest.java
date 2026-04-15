@@ -46,7 +46,9 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.testng.ITestResult;
 import org.testng.SkipException;
+import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 
 public abstract class BaseTest {
@@ -70,6 +72,23 @@ public abstract class BaseTest {
         ChallengeSolver.Status.NOT_PRESENT,
         "Not evaluated yet."
     );
+
+    private DriverLifecycle driverLifecycle;
+
+    private enum DriverLifecycle {
+        PER_METHOD,
+        PER_CLASS;
+
+        private static DriverLifecycle from(String raw) {
+            if (raw == null || raw.isBlank()) {
+                return PER_METHOD;
+            }
+            return switch (raw.trim().toLowerCase(Locale.ROOT)) {
+                case "per_class" -> PER_CLASS;
+                default -> PER_METHOD;
+            };
+        }
+    }
 
     protected record CardSnapshot(String title, String href, String metaText) {
     }
@@ -103,8 +122,8 @@ public abstract class BaseTest {
         }
     }
 
-    @BeforeMethod(alwaysRun = true)
-    public void setUp() {
+    @BeforeClass(alwaysRun = true)
+    public void setUpClass() {
         properties.clear();
         loadClasspathProperties("config.properties");
         testData = loadJson("testdata/search-terms.json");
@@ -113,6 +132,65 @@ public abstract class BaseTest {
         timeoutSeconds = getInt("MW_TIMEOUT_SECONDS", 20);
         screenshotOnFailure = getBoolean("MW_SCREENSHOT_ON_FAILURE", true);
         authSettings = loadAuthSettings();
+        driverLifecycle = DriverLifecycle.from(getString("MW_DRIVER_LIFECYCLE", "per_method"));
+
+        if (driverLifecycle == DriverLifecycle.PER_CLASS) {
+            initDriverIfNeeded();
+        }
+    }
+
+    @AfterMethod(alwaysRun = true)
+    public void afterEach(ITestResult result) {
+        try {
+            if (result != null && !result.isSuccess() && screenshotOnFailure) {
+                captureScreenshot(result.getMethod().getMethodName());
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
+    @AfterClass(alwaysRun = true)
+    public void tearDownClass() {
+        if (driverLifecycle != DriverLifecycle.PER_CLASS) {
+            return;
+        }
+        quitDriver();
+    }
+
+    @BeforeMethod(alwaysRun = true)
+    public void beforeEach() {
+        if (driverLifecycle == null) {
+            driverLifecycle = DriverLifecycle.from(getString("MW_DRIVER_LIFECYCLE", "per_method"));
+        }
+
+        if (driverLifecycle == DriverLifecycle.PER_METHOD) {
+            // Keep the existing behavior: fresh session each test method.
+            properties.clear();
+            loadClasspathProperties("config.properties");
+            testData = loadJson("testdata/search-terms.json");
+            siteRootUrl = normalizeBaseUrl(getString("MW_BASE_URL", DEFAULT_BASE_URL));
+            localeBaseUrl = siteRootUrl.endsWith("/en") ? siteRootUrl : siteRootUrl + "/en";
+            timeoutSeconds = getInt("MW_TIMEOUT_SECONDS", 20);
+            screenshotOnFailure = getBoolean("MW_SCREENSHOT_ON_FAILURE", true);
+            authSettings = loadAuthSettings();
+            initDriverIfNeeded();
+        } else {
+            // Per-class session: ensure driver exists, but don’t recreate it.
+            initDriverIfNeeded();
+        }
+    }
+
+    @AfterMethod(alwaysRun = true)
+    public void tearDownMethod() {
+        if (driverLifecycle == DriverLifecycle.PER_METHOD) {
+            quitDriver();
+        }
+    }
+
+    private void initDriverIfNeeded() {
+        if (driver != null && wait != null && challengeSolver != null) {
+            return;
+        }
         driver = createDriver();
         wait = new WebDriverWait(driver, timeout());
         challengeSolver = new ChallengeSolver(
@@ -120,27 +198,26 @@ public abstract class BaseTest {
             wait,
             this::currentUrl,
             () -> getString("MW_2CAPTCHA_KEY", ""),
+            () -> getString("MW_TURNSTILE_SITEKEY", ""),
             () -> getInt("MW_2CAPTCHA_TIMEOUT_SECONDS", 90),
             () -> getInt("MW_2CAPTCHA_POLL_SECONDS", 3),
             this::pauseBriefly
         );
+        System.out.println("[BaseTest] WebDriver initialized (" + driverLifecycle + ") for " + getClass().getSimpleName());
     }
 
-    @AfterMethod(alwaysRun = true)
-    public void tearDown(ITestResult result) {
+    private void quitDriver() {
         if (driver == null) {
             return;
         }
-
         try {
-            if (result != null && !result.isSuccess() && screenshotOnFailure) {
-                captureScreenshot(result.getMethod().getMethodName());
-            }
-        } finally {
             driver.quit();
+        } catch (Exception ignored) {
+        } finally {
             driver = null;
             wait = null;
             challengeSolver = null;
+            System.out.println("[BaseTest] WebDriver quit for " + getClass().getSimpleName());
         }
     }
 
