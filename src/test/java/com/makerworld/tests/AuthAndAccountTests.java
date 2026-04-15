@@ -12,7 +12,8 @@ public class AuthAndAccountTests extends BaseTest {
     @Test(groups = {"smoke", "regression", "auth"})
     public void authBootstrapProducesAuthenticatedMarkers() {
         bootstrapAuthenticatedSessionOrSkip();
-        new HomePage(driver, config).open();
+        HomePage homePage = new HomePage(driver, config).open();
+        skipIfHumanVerificationPersists(homePage, "authenticated home page");
 
         Assert.assertTrue(authVerifier().isAuthenticated(), "Expected authenticated markers after auth bootstrap.");
     }
@@ -20,7 +21,8 @@ public class AuthAndAccountTests extends BaseTest {
     @Test(groups = {"regression", "auth"})
     public void authenticatedUserCanReachAccountSurface() {
         bootstrapAuthenticatedSessionOrSkip();
-        new HomePage(driver, config).open();
+        HomePage homePage = new HomePage(driver, config).open();
+        skipIfHumanVerificationPersists(homePage, "authenticated account surface");
         AccountPage accountPage = new AccountPage(driver, config);
 
         Assert.assertTrue(accountPage.hasAuthenticatedMarkers(), "Expected authenticated markers before opening account surface.");
@@ -31,6 +33,7 @@ public class AuthAndAccountTests extends BaseTest {
     public void authenticatedModelPageExposesGatedActionSurface() {
         bootstrapAuthenticatedSessionOrSkip();
         ModelDetailPage detailPage = new ModelDetailPage(driver, config).open(testData.pinnedModelPath());
+        skipIfHumanVerificationPersists(detailPage, "authenticated model detail");
 
         Assert.assertTrue(detailPage.hasEngagementActions(), "Expected gated engagement actions to be visible for authenticated users.");
         Assert.assertTrue(detailPage.tryTriggerEngagementAction(), "Expected to trigger at least one engagement action.");
@@ -40,7 +43,8 @@ public class AuthAndAccountTests extends BaseTest {
     @Test(groups = {"regression", "auth"})
     public void authenticatedSessionSurvivesRefresh() {
         bootstrapAuthenticatedSessionOrSkip();
-        new HomePage(driver, config).open();
+        HomePage homePage = new HomePage(driver, config).open();
+        skipIfHumanVerificationPersists(homePage, "authenticated refresh baseline");
 
         Assert.assertTrue(authVerifier().isAuthenticated(), "Expected authenticated state before refresh.");
 
@@ -55,7 +59,8 @@ public class AuthAndAccountTests extends BaseTest {
     @Test(groups = {"regression", "auth"})
     public void logoutReturnsGuestVisibleControls() {
         bootstrapAuthenticatedSessionOrSkip();
-        new HomePage(driver, config).open();
+        HomePage homePage = new HomePage(driver, config).open();
+        skipIfHumanVerificationPersists(homePage, "authenticated logout flow");
         AccountPage accountPage = new AccountPage(driver, config);
 
         Assert.assertTrue(accountPage.hasLogoutControl(), "Expected a logout control for authenticated users.");

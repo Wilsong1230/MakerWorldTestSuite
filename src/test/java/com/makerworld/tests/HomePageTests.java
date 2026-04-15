@@ -6,13 +6,13 @@ import com.makerworld.pages.ModelDetailPage;
 import com.makerworld.utils.AssertionUtils;
 import com.makerworld.utils.CardSnapshot;
 import org.testng.Assert;
-import org.testng.SkipException;
 import org.testng.annotations.Test;
 
 public class HomePageTests extends BaseTest {
     @Test(groups = {"smoke", "regression", "content"})
     public void homePageTitleAndHeroAreVisible() {
         HomePage homePage = new HomePage(driver, config).open();
+        skipIfHumanVerificationPersists(homePage, "home page load");
 
         Assert.assertTrue(homePage.isLoaded(), "Expected MakerWorld home page to load.");
         Assert.assertTrue(homePage.heroText().length() >= 3, "Expected hero text to be visible.");
@@ -21,6 +21,7 @@ public class HomePageTests extends BaseTest {
     @Test(groups = {"regression", "content"})
     public void headerIncludesExpectedNavigationLinks() {
         HomePage homePage = new HomePage(driver, config).open();
+        skipIfHumanVerificationPersists(homePage, "home page header navigation");
 
         for (String expectedLink : testData.expectedHeaderLinks()) {
             Assert.assertTrue(
@@ -33,6 +34,7 @@ public class HomePageTests extends BaseTest {
     @Test(groups = {"regression", "content", "media"})
     public void firstFeaturedCardHasMetadataAndLoadedImage() {
         HomePage homePage = new HomePage(driver, config).open();
+        skipIfHumanVerificationPersists(homePage, "home page featured cards");
         CardSnapshot snapshot = homePage.firstFeaturedModelCard()
             .orElseThrow(() -> new AssertionError("Expected at least one featured model card."));
 
@@ -44,14 +46,12 @@ public class HomePageTests extends BaseTest {
     @Test(groups = {"smoke", "regression", "content"})
     public void openingFeaturedCardLandsOnModelDetailPage() {
         HomePage homePage = new HomePage(driver, config).open();
+        skipIfHumanVerificationPersists(homePage, "home page featured-card navigation");
         CardSnapshot snapshot = homePage.firstFeaturedModelCard()
             .orElseThrow(() -> new AssertionError("Expected a featured model card to open."));
 
         ModelDetailPage detailPage = homePage.openFirstFeaturedModel();
-
-        if (detailPage.isSecurityVerificationPage()) {
-            throw new SkipException("MakerWorld security verification blocked the featured-card detail navigation.");
-        }
+        skipIfHumanVerificationPersists(detailPage, "featured-card detail navigation");
 
         Assert.assertTrue(detailPage.isLoaded(), "Expected to land on a model detail page.");
         Assert.assertTrue(
@@ -64,6 +64,7 @@ public class HomePageTests extends BaseTest {
     @Test(groups = {"regression", "content"})
     public void footerIncludesFaqOrHelpLink() {
         HomePage homePage = new HomePage(driver, config).open();
+        skipIfHumanVerificationPersists(homePage, "home page footer links");
 
         Assert.assertTrue(homePage.hasFooterHelpOrFaqLink(), "Expected FAQ or help links in visible page navigation.");
     }

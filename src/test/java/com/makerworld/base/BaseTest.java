@@ -15,6 +15,7 @@ import com.makerworld.auth.ManualLoginCheckpointProvider;
 import com.makerworld.core.ConfigManager;
 import com.makerworld.core.DriverFactory;
 import com.makerworld.listeners.TestListener;
+import com.makerworld.pages.BasePage;
 import com.makerworld.utils.TestDataLoader;
 import com.twocaptcha.TwoCaptcha;
 
@@ -23,6 +24,7 @@ import com.twocaptcha.TwoCaptcha;
 
 @Listeners(TestListener.class)
 public abstract class BaseTest {
+    private static final long HUMAN_VERIFICATION_RECHECK_MILLIS = 10_000L;
     private static final ThreadLocal<WebDriver> THREAD_DRIVER = new ThreadLocal<>();
     private static final ThreadLocal<ConfigManager> THREAD_CONFIG = new ThreadLocal<>();
 
@@ -72,6 +74,23 @@ public abstract class BaseTest {
 
     protected AuthVerifier authVerifier() {
         return new AuthVerifier(driver, config);
+    }
+
+    protected void skipIfHumanVerificationPersists(BasePage page, String context) {
+        if (!page.isSecurityVerificationPage()) {
+            return;
+        }
+
+        System.out.println("Human verification detected for " + context + ". Waiting 10 seconds before rechecking...");
+        try {
+            Thread.sleep(HUMAN_VERIFICATION_RECHECK_MILLIS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+
+        if (page.isSecurityVerificationPage()) {
+            throw new SkipException("MakerWorld human verification still present after 10 seconds: " + context);
+        }
     }
 
     public static WebDriver getThreadDriver() {
