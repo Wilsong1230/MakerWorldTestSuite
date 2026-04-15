@@ -37,6 +37,26 @@ export MW_ENABLE_AUTH_SUITE=true
 export MW_AUTH_MODE=chrome_profile
 ```
 
+## CAPTCHA / Turnstile Handling
+
+The suite now treats Cloudflare verification as an explicit pass/fail state:
+- If no challenge is present, tests proceed normally.
+- If challenge is present, the runner attempts native widget interaction first, then `2Captcha`.
+- If challenge still cannot be cleared, the test fails fast with a clear error instead of silently continuing.
+
+Required local env for solver-backed runs:
+
+```bash
+export MW_2CAPTCHA_KEY=your_2captcha_api_key
+export MW_2CAPTCHA_TIMEOUT_SECONDS=90
+export MW_2CAPTCHA_POLL_SECONDS=3
+```
+
+Troubleshooting:
+- `MW_2CAPTCHA_KEY is missing` means solver fallback is unavailable.
+- If challenge persists after solve timeout, increase `MW_2CAPTCHA_TIMEOUT_SECONDS` and rerun.
+- Keep `MW_HEADLESS=false` for local diagnosis when challenge behavior changes.
+
 ## Run Commands
 
 Run everything:

@@ -1,31 +1,25 @@
 package com.makerworld.tests;
 
 import com.makerworld.base.BaseTest;
-import com.makerworld.pages.HomePage;
-import com.makerworld.pages.ModelDetailPage;
-import com.makerworld.utils.AssertionUtils;
-import com.makerworld.utils.CardSnapshot;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
 public class HomePageTests extends BaseTest {
     @Test(groups = {"smoke", "regression", "content"})
     public void homePageTitleAndHeroAreVisible() {
-        HomePage homePage = new HomePage(driver, config).open();
-        skipIfHumanVerificationPersists(homePage, "home page load");
+        openHomePageAndStabilize("home page load");
 
-        Assert.assertTrue(homePage.isLoaded(), "Expected MakerWorld home page to load.");
-        Assert.assertTrue(homePage.heroText().length() >= 3, "Expected hero text to be visible.");
+        Assert.assertTrue(isHomePageLoaded(), "Expected MakerWorld home page to load.");
+        Assert.assertTrue(homeHeroText().length() >= 3, "Expected hero text to be visible.");
     }
 
     @Test(groups = {"regression", "content"})
     public void headerIncludesExpectedNavigationLinks() {
-        HomePage homePage = new HomePage(driver, config).open();
-        skipIfHumanVerificationPersists(homePage, "home page header navigation");
+        openHomePageAndStabilize("home page header navigation");
 
-        for (String expectedLink : testData.expectedHeaderLinks()) {
+        for (String expectedLink : expectedHeaderLinks()) {
             Assert.assertTrue(
-                homePage.headerLinkTexts().stream().anyMatch(text -> AssertionUtils.normalizedContains(text, expectedLink)),
+                headerLinkTexts().stream().anyMatch(text -> normalizedContains(text, expectedLink)),
                 "Expected header link for " + expectedLink
             );
         }
@@ -33,39 +27,32 @@ public class HomePageTests extends BaseTest {
 
     @Test(groups = {"regression", "content", "media"})
     public void firstFeaturedCardHasMetadataAndLoadedImage() {
-        HomePage homePage = new HomePage(driver, config).open();
-        skipIfHumanVerificationPersists(homePage, "home page featured cards");
-        CardSnapshot snapshot = homePage.firstFeaturedModelCard()
+        openHomePageAndStabilize("home page featured cards");
+        CardSnapshot snapshot = firstFeaturedModelCard()
             .orElseThrow(() -> new AssertionError("Expected at least one featured model card."));
 
         Assert.assertFalse(snapshot.title().isBlank(), "Expected featured model card title.");
         Assert.assertFalse(snapshot.href().isBlank(), "Expected featured model card href.");
-        Assert.assertTrue(homePage.firstFeaturedCardImageLoads(), "Expected featured model image to load.");
+        Assert.assertTrue(firstFeaturedCardImageLoads(), "Expected featured model image to load.");
     }
 
     @Test(groups = {"smoke", "regression", "content"})
     public void openingFeaturedCardLandsOnModelDetailPage() {
-        HomePage homePage = new HomePage(driver, config).open();
-        skipIfHumanVerificationPersists(homePage, "home page featured-card navigation");
-        CardSnapshot snapshot = homePage.firstFeaturedModelCard()
+        openHomePageAndStabilize("home page featured-card navigation");
+        CardSnapshot snapshot = firstFeaturedModelCard()
             .orElseThrow(() -> new AssertionError("Expected a featured model card to open."));
 
-        ModelDetailPage detailPage = homePage.openFirstFeaturedModel();
-        skipIfHumanVerificationPersists(detailPage, "featured-card detail navigation");
+        openFirstFeaturedModel();
+        skipIfHumanVerificationPersists("featured-card detail navigation");
 
-        Assert.assertTrue(detailPage.isLoaded(), "Expected to land on a model detail page.");
-        Assert.assertTrue(
-            AssertionUtils.normalizedContains(detailPage.modelTitle(), AssertionUtils.slugToken(snapshot.title()))
-                || AssertionUtils.normalizedContains(snapshot.metaText(), detailPage.modelTitle()),
-            "Expected detail title to match the featured card title."
-        );
+        Assert.assertTrue(isModelDetailPageLoaded(), "Expected to land on a model detail page.");
+        Assert.assertTrue(detailMatchesCard(snapshot, modelTitle()), "Expected detail title to match the featured card title.");
     }
 
     @Test(groups = {"regression", "content"})
     public void footerIncludesFaqOrHelpLink() {
-        HomePage homePage = new HomePage(driver, config).open();
-        skipIfHumanVerificationPersists(homePage, "home page footer links");
+        openHomePageAndStabilize("home page footer links");
 
-        Assert.assertTrue(homePage.hasFooterHelpOrFaqLink(), "Expected FAQ or help links in visible page navigation.");
+        Assert.assertTrue(hasFooterHelpOrFaqLink(), "Expected FAQ or help links in visible page navigation.");
     }
 }
