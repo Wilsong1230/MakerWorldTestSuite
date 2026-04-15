@@ -387,18 +387,55 @@ public abstract class BasePage {
             return false;
         }
     }
+
     private void solveCloudflareChallenge() {
+    System.out.println("Cloudflare Checkmark Challenge detected.");
+
+// TIER 1: The Humanized Native Click
+    try {
+        System.out.println("Attempting native Selenium click INSIDE the Turnstile widget...");
+        
+        // 1. Wait for the iframe and switch Selenium's focus INTO it
+        wait.until(ExpectedConditions.frameToBeAvailableAndSwitchToIt(
+            By.cssSelector("iframe[src*='turnstile'], iframe[src*='challenges']")
+        ));
+        
+        // 2. Locate the body of the challenge widget
+        WebElement challengeBody = wait.until(ExpectedConditions.presenceOfElementLocated(By.tagName("body")));
+        
+        // 3. Perform a patient, humanized click sequence
+        new Actions(driver)
+            .pause(Duration.ofSeconds(4)) // CRITICAL: Wait 4 seconds for the spinner to become a checkbox
+            .moveToElement(challengeBody, 12, 8) // Offset slightly from center
+            .pause(Duration.ofMillis(600)) // Pause to mimic human targeting
+            .click()
+            .perform();
+            
+        // 4. Switch Selenium's focus back to the main website document
+        driver.switchTo().defaultContent();
+        
+        // Wait up to 10 seconds to see if the Cloudflare screen routes us to MakerWorld
+        if (new WebDriverWait(driver, Duration.ofSeconds(10)).until(webDriver -> !isSecurityVerificationPage())) {
+            System.out.println("Native click successful. Challenge cleared.");
+            pauseBriefly();
+            return; // Exit early!
+        }
+    } catch (Exception e) {
+        // Ensure we switch back to the main content even if the click fails
+        try { driver.switchTo().defaultContent(); } catch (Exception ignored) {}
+        System.out.println("Native click didn't clear it. Proceeding to 2Captcha injection...");
+    }
+    // TIER 2: The 2Captcha Fallback Strategy
     String apiKey = config.getString("MW_2CAPTCHA_KEY", "");
     if (apiKey.isBlank()) {
-        System.err.println("Cloudflare detected, but MW_2CAPTCHA_KEY is missing from config.properties");
+        System.err.println("MW_2CAPTCHA_KEY is missing. Cannot proceed with fallback.");
         return;
     }
 
     try {
-        System.out.println("Solving Cloudflare Turnstile via 2Captcha...");
+        System.out.println("Solving via 2Captcha API...");
         TwoCaptcha solver = new TwoCaptcha(apiKey);
         
-        // Dynamically grab the sitekey from the page environment if possible, fallback to known key
         String siteKey = (String) js.executeScript(
             "return window.publicEnv ? window.publicEnv.NEXT_PUBLIC_CF_TURNSTILE_SITE_KEY : '0x4AAAAAAAPGX7kh4AO_iqCW';"
         );
@@ -407,36 +444,31 @@ public abstract class BasePage {
         captcha.setSiteKey(siteKey);
         captcha.setUrl(currentUrl());
         
-        // Match browser fingerprint
         String ua = (String) js.executeScript("return navigator.userAgent;");
         captcha.setUserAgent(ua);
 
         solver.solve(captcha);
         String token = captcha.getCode();
 
-        // 1. Inject the token
+        // INJECTION UPDATE: Inject token AND submit the Cloudflare challenge form
         js.executeScript(
-            "var input = document.querySelector('[name=\"cf-turnstile-response\"]');" +
-            "if (input) { input.value = '" + token + "'; }"
+            "var input = document.getElementsByName('cf-turnstile-response')[0];" +
+            "if (input) { input.value = '" + token + "'; }" +
+            
+            // 1. Try submitting the Interstitial checkmark form
+            "var form = document.getElementById('challenge-form');" +
+            "if (form) { form.submit(); }" +
+            
+            // 2. Try triggering the embedded React callback (for in-page challenges)
+            "if (window.turnstile) { try { turnstile.callback('" + token + "'); } catch(e) {} }"
         );
         
-        // 2. Trigger the callback for React/Next.js to process the token
-        js.executeScript(
-            "if (window.turnstile) { " +
-            "  try { turnstile.callback('" + token + "'); } catch(e) {} " +
-            "}"
-        );
-        
-     // CRITICAL FIX: Wait for the Turnstile iframe/widget to leave the DOM
-        System.out.println("Token injected. Waiting for Cloudflare to clear...");
+        System.out.println("Token injected. Waiting for Cloudflare to route to target page...");
         wait.until(ExpectedConditions.invisibilityOfElementLocated(By.className("cf-turnstile")));
-        
-        // Also wait until our detection method returns false
         wait.until(webDriver -> !isSecurityVerificationPage());
         
-        pauseBriefly(); // Allow MakerWorld's frontend state to fully settle
-        
-        System.out.println("Cloudflare bypassed successfully.");
+        pauseBriefly(); 
+        System.out.println("Cloudflare bypassed via 2Captcha.");
     } catch (Exception e) {
         System.err.println("2Captcha failed: " + e.getMessage());
     }

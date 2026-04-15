@@ -82,6 +82,7 @@ public abstract class BaseTest {
         }
 
         System.out.println("Human verification detected for " + context + ". Waiting 10 seconds before rechecking...");
+        
         try {
             Thread.sleep(HUMAN_VERIFICATION_RECHECK_MILLIS);
         } catch (InterruptedException e) {
