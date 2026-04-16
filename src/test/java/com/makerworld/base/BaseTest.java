@@ -60,16 +60,26 @@ public abstract class BaseTest {
         solver = new ChallengeSolver(driver);
     }
 
-    // Centralized Navigation
+   // Centralized Navigation with a slow-motion delay
     protected void navigate(String path) {
-        // Logic fix: Only prepend the base URL if the path does NOT already start with "http"
         String url = path.startsWith("http") ? path : "https://makerworld.com" + (path.startsWith("/") ? "" : "/") + path;
         
         System.out.println("[BaseTest] Navigating to: " + url);
         driver.get(url);
         
-        // Ensure the solver is triggered after every load
+        // Let the page render so it's visible on recording
+        slowDown(2000); 
+        
         solver.solveIfPresent("Navigation to " + path);
+        
+        // Final pause to see the result
+        slowDown(1000);
+    }
+
+    protected void slowDown(int millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException ignored) {}
     }
 
     // --- Core Logic Helpers (Copy from original BaseTest.java) ---

@@ -59,28 +59,21 @@ public class ChallengeSolver {
 
     private String call2CaptchaAPI(Map<String, Object> params) {
         String apiKey = System.getProperty("MW_2CAPTCHA_KEY", System.getenv("MW_2CAPTCHA_KEY"));
-        if (apiKey == null || apiKey.isBlank()) {
-            throw new IllegalStateException("MW_2CAPTCHA_KEY is not set.");
-        }
-    
         TwoCaptcha solver = new TwoCaptcha(apiKey);
         Turnstile captcha = new Turnstile();
-    
-        // Standard methods supported by the Turnstile class
+
         captcha.setSiteKey((String) params.get("sitekey"));
         captcha.setUrl(driver.getCurrentUrl());
         
-        // Optional fields (supported by the 2Captcha Turnstile SDK)
-        if (params.get("action") != null) captcha.setAction((String) params.get("action"));
-        if (params.get("cData") != null) captcha.setData((String) params.get("cData"));
-        if (params.get("pageData") != null) captcha.setPageData((String) params.get("pageData"));
-    
-        // User-Agent must match your browser session
+        // If these still have squiggles, run 'mvn clean install' first
+        if (params.get("action") != null) captcha.addParam("action", (String) params.get("action"));
+        if (params.get("cData") != null) captcha.addParam("data", (String) params.get("cData"));
+        if (params.get("pageData") != null) captcha.addParam("pagedata", (String) params.get("pageData"));
+
         String userAgent = (String) driver.executeScript("return navigator.userAgent;");
-        captcha.setUserAgent(userAgent);
-    
+        captcha.addParam("userAgent", userAgent);
+
         try {
-            System.out.println("[2Captcha] Solving Turnstile...");
             solver.solve(captcha);
             return captcha.getCode();
         } catch (Exception e) {
