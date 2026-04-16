@@ -2,13 +2,18 @@ package com.makerworld.base;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.openqa.selenium.By;
+import org.openqa.selenium.Keys;
+import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.testng.annotations.*;
 import java.time.Duration;
 import java.util.Map;
 import java.util.List;
+import java.util.Optional;
 
 public abstract class BaseTest {
     protected ChromeDriver driver;
@@ -23,6 +28,7 @@ public abstract class BaseTest {
         ChromeOptions options = new ChromeOptions();
         options.addArguments("--disable-blink-features=AutomationControlled");
         options.setExperimentalOption("excludeSwitches", List.of("enable-automation"));
+        options.addArguments("--window-size=1600,1200");
         
         driver = new ChromeDriver(options);
         wait = new WebDriverWait(driver, Duration.ofSeconds(20));
@@ -56,24 +62,26 @@ public abstract class BaseTest {
 
     // Centralized Navigation
     protected void navigate(String path) {
-        String url = path.startsWith("http") ? path : "https://makerworld.com" + path;
+        String url = path.startsWith("http") ? "https://makerworld.com" + path : path;
+        if (!path.startsWith("http")) url = "https://makerworld.com" + path;
         driver.get(url);
         solver.solveIfPresent("Navigation to " + path);
     }
 
-    // --- Restored Helper Methods for Test Classes ---
-    protected void openHomePageAndStabilize(String context) { navigate("/en"); }
-    protected void openModelsPageAndStabilize(String context) { navigate("/en/models"); }
-    protected void openModelDetailPageAndStabilize(String path, String context) { navigate(path); }
+    // --- Core Logic Helpers (Copy from original BaseTest.java) ---
+    // Make sure to update these to use navigate() or call solver.solveIfPresent() after clicks.
 
-    protected String commonSearchTerm() { return testData.path("commonSearchTerm").asText(); }
-    protected String pinnedModelPath() { return testData.path("pinnedModelPath").asText(); }
-    
     protected void searchFromHomeAndStabilize(String term, String context) {
         navigate("/en");
-        // Add search logic here using the driver...
+        // Re-implement your original search logic here
+        WebElement searchInput = driver.findElement(By.cssSelector("input[type='search']"));
+        searchInput.sendKeys(term);
+        searchInput.sendKeys(Keys.ENTER);
         solver.solveIfPresent("Search Submission");
     }
+
+    // Add all other missing methods like isHomePageLoaded(), modelLinks(), etc.
+    // Ensure that low-level clicks (like openFirstLink) also trigger solver.solveIfPresent()
 
     @AfterMethod(alwaysRun = true)
     public void tearDown() {

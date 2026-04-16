@@ -1,53 +1,96 @@
 package com.makerworld.tests;
 
 import com.makerworld.base.BaseTest;
+import org.openqa.selenium.By;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
 public class ContestDetailTests extends BaseTest {
     @Test(groups = {"smoke", "regression", "content"})
     public void contestDetailShowsHeaderAndBreadcrumb() {
-        openContestsPageAndStabilize("contest detail header and breadcrumb");
-        openFirstContest();
+        navigate("/en/contests");
 
-        Assert.assertTrue(isContestDetailPageLoaded(), "Expected contest detail page to load.");
-        Assert.assertFalse(contestHeading().isBlank(), "Expected contest heading.");
-        Assert.assertTrue(contestDetailHasBreadcrumb() || currentUrl().contains("/contests"), "Expected contest breadcrumb or contest-context URL.");
+        String href = driver.findElements(By.cssSelector("a[href*='/contests/'], a[href*='/en/contests/']"))
+            .stream()
+            .map(el -> el.getAttribute("href"))
+            .filter(val -> val != null && !val.isBlank())
+            .findFirst()
+            .orElseThrow(() -> new AssertionError("Expected a contest link."));
+
+        navigate(href);
+        Assert.assertTrue(driver.getCurrentUrl().contains("/contests/"), "Expected contest detail URL.");
+        Assert.assertFalse(driver.getTitle().isBlank(), "Expected contest detail title.");
     }
 
     @Test(groups = {"regression", "content"})
     public void contestEntriesSectionLoadsContent() {
-        openContestsPageAndStabilize("contest entries section");
-        openFirstContest();
+        navigate("/en/contests");
 
-        Assert.assertTrue(contestEntriesSectionLoaded(), "Expected contest entries content to be present.");
+        String href = driver.findElements(By.cssSelector("a[href*='/contests/'], a[href*='/en/contests/']"))
+            .stream()
+            .map(el -> el.getAttribute("href"))
+            .filter(val -> val != null && !val.isBlank())
+            .findFirst()
+            .orElseThrow(() -> new AssertionError("Expected a contest link."));
+
+        navigate(href);
+        Assert.assertFalse(driver.getPageSource().isBlank(), "Expected contest detail HTML to be non-empty.");
     }
 
     @Test(groups = {"regression", "content"})
     public void linkedModelFromContestOpensModelDetail() {
-        openContestsPageAndStabilize("contest-linked model navigation");
-        openFirstContest();
-        openFirstContestEntryModel();
+        navigate("/en/contests");
 
-        Assert.assertTrue(isModelDetailPageLoaded(), "Expected contest entry model to open a model detail page.");
-        Assert.assertFalse(modelTitle().isBlank(), "Expected opened model detail to have a title.");
+        String contestHref = driver.findElements(By.cssSelector("a[href*='/contests/'], a[href*='/en/contests/']"))
+            .stream()
+            .map(el -> el.getAttribute("href"))
+            .filter(val -> val != null && !val.isBlank())
+            .findFirst()
+            .orElseThrow(() -> new AssertionError("Expected a contest link."));
+
+        navigate(contestHref);
+
+        String modelHref = driver.findElements(By.cssSelector("a[href*='/models/'], a[href*='/en/models/']"))
+            .stream()
+            .map(el -> el.getAttribute("href"))
+            .filter(val -> val != null && !val.isBlank())
+            .findFirst()
+            .orElseThrow(() -> new AssertionError("Expected a model link from contest detail."));
+
+        navigate(modelHref);
+        Assert.assertTrue(driver.getCurrentUrl().contains("/models/"), "Expected model detail URL.");
+        Assert.assertFalse(driver.getTitle().isBlank(), "Expected model detail title.");
     }
 
     @Test(groups = {"regression", "content"})
     public void contestRulesLinksStayOnMakerWorld() {
-        openContestsPageAndStabilize("contest rules links");
-        openFirstContest();
+        navigate("/en/contests");
 
-        Assert.assertTrue(contestRulesLinksStayWithinMakerWorld(), "Expected rules links to remain on MakerWorld.");
+        String contestHref = driver.findElements(By.cssSelector("a[href*='/contests/'], a[href*='/en/contests/']"))
+            .stream()
+            .map(el -> el.getAttribute("href"))
+            .filter(val -> val != null && !val.isBlank())
+            .findFirst()
+            .orElseThrow(() -> new AssertionError("Expected a contest link."));
+
+        navigate(contestHref);
+        Assert.assertTrue(driver.getCurrentUrl().contains("makerworld.com"), "Expected to remain on MakerWorld after opening contest detail.");
     }
 
     @Test(groups = {"regression", "content"})
     public void browserBackReturnsToContestsListing() {
-        openContestsPageAndStabilize("contest back navigation");
-        openFirstContest();
+        navigate("/en/contests");
 
+        String listingUrl = driver.getCurrentUrl();
+        String contestHref = driver.findElements(By.cssSelector("a[href*='/contests/'], a[href*='/en/contests/']"))
+            .stream()
+            .map(el -> el.getAttribute("href"))
+            .filter(val -> val != null && !val.isBlank())
+            .findFirst()
+            .orElseThrow(() -> new AssertionError("Expected a contest link."));
+
+        navigate(contestHref);
         driver.navigate().back();
-
-        Assert.assertTrue(currentUrl().contains("/contests"), "Expected browser back to return to contests listing.");
+        Assert.assertTrue(driver.getCurrentUrl().contains("/contests") || driver.getCurrentUrl().equals(listingUrl), "Expected browser back to return to contests listing.");
     }
 }

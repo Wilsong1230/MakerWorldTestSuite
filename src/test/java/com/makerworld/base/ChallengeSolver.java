@@ -62,22 +62,23 @@ public class ChallengeSolver {
         if (apiKey == null || apiKey.isBlank()) {
             throw new IllegalStateException("MW_2CAPTCHA_KEY is not set.");
         }
-
+    
         TwoCaptcha solver = new TwoCaptcha(apiKey);
         Turnstile captcha = new Turnstile();
-
+    
+        // Standard methods supported by the Turnstile class
         captcha.setSiteKey((String) params.get("sitekey"));
         captcha.setUrl(driver.getCurrentUrl());
         
-        // Pass the extra parameters captured by the hook
+        // Optional fields (supported by the 2Captcha Turnstile SDK)
         if (params.get("action") != null) captcha.setAction((String) params.get("action"));
         if (params.get("cData") != null) captcha.setData((String) params.get("cData"));
         if (params.get("pageData") != null) captcha.setPageData((String) params.get("pageData"));
-
-        // User-Agent MUST match the browser
+    
+        // User-Agent must match your browser session
         String userAgent = (String) driver.executeScript("return navigator.userAgent;");
         captcha.setUserAgent(userAgent);
-
+    
         try {
             System.out.println("[2Captcha] Solving Turnstile...");
             solver.solve(captcha);
