@@ -1,5 +1,7 @@
 package com.makerworld.base;
 
+import com.twocaptcha.TwoCaptcha;
+import com.twocaptcha.captcha.Turnstile;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.chrome.ChromeDriver;
 import java.util.Map;
@@ -14,38 +16,78 @@ public class ChallengeSolver {
     public void solveIfPresent(String context) {
         if (!isChallengeActive()) return;
 
-        // 1. Extract params from our CDP hook
+        System.out.println("[ChallengeSolver] Cloudflare detected for: " + context);
+
+        // 1. Extract params from the CDP-injected hook
         Map<String, Object> params = (Map<String, Object>) driver.executeScript("return window.__mw_cf_params;");
         
         if (params == null) {
-            System.out.println("Challenge active but params not yet captured. Retrying...");
-            // Add a small wait/retry loop here if needed
-            return;
+            System.out.println("[ChallengeSolver] Challenge active but params not yet captured. Waiting...");
+            return; 
         }
 
-        // 2. Send to 2Captcha (Implement your existing solver logic here)
+        // 2. Solve via 2Captcha SDK
         String token = call2CaptchaAPI(params); 
 
         // 3. The "Nuclear" Injection
-        // Fills the inputs AND triggers the site's internal logic
+        // Fills the inputs AND triggers the site's internal callback to bypass the checkmark
         String inject = """
             const token = arguments[0];
             const params = window.__mw_cf_params;
             
             // Fill hidden fields
-            document.getElementsByName('cf-turnstile-response')[0].value = token;
+            ['cf-turnstile-response', 'g-recaptcha-response'].forEach(name => {
+                const el = document.getElementsByName(name)[0];
+                if (el) {
+                    el.value = token;
+                    el.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            });
             
-            // Trigger the callback directly
+            // Trigger the site's internal callback directly (Clears the spinner)
             if (params && params.callback) {
                 if (typeof window[params.callback] === 'function') {
                     window[params.callback](token);
                 }
+            } else if (typeof window.cfCallback === 'function') {
+                window.cfCallback(token);
             }
         """;
         driver.executeScript(inject, token);
+        System.out.println("[ChallengeSolver] Token injected and callback executed.");
     }
 
-    private boolean isChallengeActive() {
+    private String call2CaptchaAPI(Map<String, Object> params) {
+        String apiKey = System.getProperty("MW_2CAPTCHA_KEY", System.getenv("MW_2CAPTCHA_KEY"));
+        if (apiKey == null || apiKey.isBlank()) {
+            throw new IllegalStateException("MW_2CAPTCHA_KEY is not set.");
+        }
+
+        TwoCaptcha solver = new TwoCaptcha(apiKey);
+        Turnstile captcha = new Turnstile();
+
+        captcha.setSiteKey((String) params.get("sitekey"));
+        captcha.setUrl(driver.getCurrentUrl());
+        
+        // Pass the extra parameters captured by the hook
+        if (params.get("action") != null) captcha.setAction((String) params.get("action"));
+        if (params.get("cData") != null) captcha.setData((String) params.get("cData"));
+        if (params.get("pageData") != null) captcha.setPageData((String) params.get("pageData"));
+
+        // User-Agent MUST match the browser
+        String userAgent = (String) driver.executeScript("return navigator.userAgent;");
+        captcha.setUserAgent(userAgent);
+
+        try {
+            System.out.println("[2Captcha] Solving Turnstile...");
+            solver.solve(captcha);
+            return captcha.getCode();
+        } catch (Exception e) {
+            throw new RuntimeException("2Captcha failed: " + e.getMessage());
+        }
+    }
+
+    public boolean isChallengeActive() {
         return driver.getCurrentUrl().contains("challenge") || 
                (boolean) driver.executeScript("return document.querySelectorAll('.cf-turnstile').length > 0;");
     }
