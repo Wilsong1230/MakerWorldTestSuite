@@ -62,9 +62,13 @@ public abstract class BaseTest {
 
     // Centralized Navigation
     protected void navigate(String path) {
-        String url = path.startsWith("http") ? "https://makerworld.com" + path : path;
-        if (!path.startsWith("http")) url = "https://makerworld.com" + path;
+        // Logic fix: Only prepend the base URL if the path does NOT already start with "http"
+        String url = path.startsWith("http") ? path : "https://makerworld.com" + (path.startsWith("/") ? "" : "/") + path;
+        
+        System.out.println("[BaseTest] Navigating to: " + url);
         driver.get(url);
+        
+        // Ensure the solver is triggered after every load
         solver.solveIfPresent("Navigation to " + path);
     }
 
@@ -86,5 +90,20 @@ public abstract class BaseTest {
     @AfterMethod(alwaysRun = true)
     public void tearDown() {
         if (driver != null) driver.quit();
+    }
+
+    // --- Data Helpers ---
+    protected String commonSearchTerm() {
+        return testData.path("commonSearchTerm").asText("vase");
+    }
+
+    protected String pinnedModelPath() {
+        return testData.path("pinnedModelPath").asText("/en/models/544229");
+    }
+
+    // --- Page State Helpers ---
+    protected boolean isHomePageLoaded() {
+        return driver.getTitle().contains("MakerWorld") && 
+               driver.findElements(By.cssSelector("input[type='search']")).size() > 0;
     }
 }
