@@ -59,20 +59,24 @@ public class ChallengeSolver {
 
     private String call2CaptchaAPI(Map<String, Object> params) {
         String apiKey = System.getProperty("MW_2CAPTCHA_KEY", System.getenv("MW_2CAPTCHA_KEY"));
+        if (apiKey == null || apiKey.isBlank()) {
+            throw new IllegalStateException("MW_2CAPTCHA_KEY is not set.");
+        }
+    
         TwoCaptcha solver = new TwoCaptcha(apiKey);
         Turnstile captcha = new Turnstile();
-
+    
         captcha.setSiteKey((String) params.get("sitekey"));
         captcha.setUrl(driver.getCurrentUrl());
         
-        // If these still have squiggles, run 'mvn clean install' first
-        if (params.get("action") != null) captcha.addParam("action", (String) params.get("action"));
-        if (params.get("cData") != null) captcha.addParam("data", (String) params.get("cData"));
-        if (params.get("pageData") != null) captcha.addParam("pagedata", (String) params.get("pageData"));
-
+        // Correct setters for 2Captcha Java SDK 1.3.2
+        if (params.get("action") != null) captcha.setAction((String) params.get("action"));
+        if (params.get("cData") != null) captcha.setData((String) params.get("cData"));
+        if (params.get("pageData") != null) captcha.setPageData((String) params.get("pageData"));
+    
         String userAgent = (String) driver.executeScript("return navigator.userAgent;");
-        captcha.addParam("userAgent", userAgent);
-
+        captcha.setUserAgent(userAgent);
+    
         try {
             solver.solve(captcha);
             return captcha.getCode();

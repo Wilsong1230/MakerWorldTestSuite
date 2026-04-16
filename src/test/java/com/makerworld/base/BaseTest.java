@@ -82,15 +82,33 @@ public abstract class BaseTest {
         } catch (InterruptedException ignored) {}
     }
 
+    protected void typeAndSubmitSlowly(WebElement element, String value) {
+        // Scroll into view so the recording shows where the action is
+        driver.executeScript("arguments[0].scrollIntoView({block:'center'});", element);
+        slowDown(500);
+        
+        element.clear();
+        // Type each character with a tiny delay to mimic a human
+        for (char c : value.toCharArray()) {
+            element.sendKeys(String.valueOf(c));
+            try { Thread.sleep(50); } catch (InterruptedException ignored) {}
+        }
+        slowDown(500);
+        element.sendKeys(Keys.ENTER);
+    }
+
     // --- Core Logic Helpers (Copy from original BaseTest.java) ---
     // Make sure to update these to use navigate() or call solver.solveIfPresent() after clicks.
 
     protected void searchFromHomeAndStabilize(String term, String context) {
         navigate("/en");
-        // Re-implement your original search logic here
-        WebElement searchInput = driver.findElement(By.cssSelector("input[type='search']"));
-        searchInput.sendKeys(term);
-        searchInput.sendKeys(Keys.ENTER);
+        
+        // Use a wait to ensure the search bar is ready
+        WebElement searchInput = wait.until(ExpectedConditions.elementToBeClickable(
+            By.cssSelector("input[type='search'], input[placeholder*='earch'], input[name*='search']")
+        ));
+        
+        typeAndSubmitSlowly(searchInput, term);
         solver.solveIfPresent("Search Submission");
     }
 
