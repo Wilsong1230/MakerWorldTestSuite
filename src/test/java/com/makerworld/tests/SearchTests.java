@@ -38,7 +38,6 @@ public class SearchTests extends BaseTest {
             .orElseThrow(() -> new AssertionError("Expected a search result card."));
 
         openFirstSearchResult();
-        skipIfHumanVerificationPersists("search-result detail navigation");
 
         Assert.assertTrue(isModelDetailPageLoaded(), "Expected a model detail page from the search result.");
         Assert.assertTrue(detailMatchesCard(firstResult, modelTitle()), "Expected the opened detail page title to match the search card.");

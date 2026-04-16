@@ -41,7 +41,6 @@ public class ModelDetailTests extends BaseTest {
             .orElseThrow(() -> new AssertionError("Expected at least one related model link."));
 
         openFirstRelatedModel();
-        skipIfHumanVerificationPersists("related model detail navigation");
 
         Assert.assertTrue(isModelDetailPageLoaded(), "Expected related model to open another detail page.");
         Assert.assertTrue(titlesRoughlyMatch(modelTitle(), relatedCard.title()), "Expected related detail title to match the related card title.");

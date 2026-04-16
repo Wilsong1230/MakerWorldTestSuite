@@ -41,7 +41,6 @@ public class ModelsPageTests extends BaseTest {
             .orElseThrow(() -> new AssertionError("Expected at least one model card."));
 
         openFirstModelCard();
-        skipIfHumanVerificationPersists("models-page detail navigation");
 
         Assert.assertTrue(isModelDetailPageLoaded(), "Expected to land on a model detail page.");
         Assert.assertTrue(detailMatchesCard(card, modelTitle()), "Expected opened detail page to match the model card title.");

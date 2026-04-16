@@ -9,7 +9,6 @@ public class ContestDetailTests extends BaseTest {
     public void contestDetailShowsHeaderAndBreadcrumb() {
         openContestsPageAndStabilize("contest detail header and breadcrumb");
         openFirstContest();
-        skipIfHumanVerificationPersists("contest detail header and breadcrumb");
 
         Assert.assertTrue(isContestDetailPageLoaded(), "Expected contest detail page to load.");
         Assert.assertFalse(contestHeading().isBlank(), "Expected contest heading.");
@@ -20,7 +19,6 @@ public class ContestDetailTests extends BaseTest {
     public void contestEntriesSectionLoadsContent() {
         openContestsPageAndStabilize("contest entries section");
         openFirstContest();
-        skipIfHumanVerificationPersists("contest entries section");
 
         Assert.assertTrue(contestEntriesSectionLoaded(), "Expected contest entries content to be present.");
     }
@@ -29,9 +27,7 @@ public class ContestDetailTests extends BaseTest {
     public void linkedModelFromContestOpensModelDetail() {
         openContestsPageAndStabilize("contest-linked model navigation");
         openFirstContest();
-        skipIfHumanVerificationPersists("contest-linked model navigation");
         openFirstContestEntryModel();
-        skipIfHumanVerificationPersists("contest-linked model detail");
 
         Assert.assertTrue(isModelDetailPageLoaded(), "Expected contest entry model to open a model detail page.");
         Assert.assertFalse(modelTitle().isBlank(), "Expected opened model detail to have a title.");
@@ -41,7 +37,6 @@ public class ContestDetailTests extends BaseTest {
     public void contestRulesLinksStayOnMakerWorld() {
         openContestsPageAndStabilize("contest rules links");
         openFirstContest();
-        skipIfHumanVerificationPersists("contest rules links");
 
         Assert.assertTrue(contestRulesLinksStayWithinMakerWorld(), "Expected rules links to remain on MakerWorld.");
     }
@@ -50,7 +45,6 @@ public class ContestDetailTests extends BaseTest {
     public void browserBackReturnsToContestsListing() {
         openContestsPageAndStabilize("contest back navigation");
         openFirstContest();
-        skipIfHumanVerificationPersists("contest back navigation");
 
         driver.navigate().back();
 

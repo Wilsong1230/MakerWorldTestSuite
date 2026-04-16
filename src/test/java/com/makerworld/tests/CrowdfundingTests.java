@@ -41,7 +41,6 @@ public class CrowdfundingTests extends BaseTest {
             .orElseThrow(() -> new AssertionError("Expected a crowdfunding project card."));
 
         openFirstCrowdfundingProject();
-        skipIfHumanVerificationPersists("crowdfunding detail navigation");
 
         Assert.assertTrue(isCrowdfundingProjectPageLoaded(), "Expected a crowdfunding detail page to load.");
         Assert.assertTrue(detailMatchesCard(card, crowdfundingProjectHeading()), "Expected opened crowdfunding page heading to match the project card.");

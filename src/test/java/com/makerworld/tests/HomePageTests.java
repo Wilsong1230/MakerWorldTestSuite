@@ -43,7 +43,6 @@ public class HomePageTests extends BaseTest {
             .orElseThrow(() -> new AssertionError("Expected a featured model card to open."));
 
         openFirstFeaturedModel();
-        skipIfHumanVerificationPersists("featured-card detail navigation");
 
         Assert.assertTrue(isModelDetailPageLoaded(), "Expected to land on a model detail page.");
         Assert.assertTrue(detailMatchesCard(snapshot, modelTitle()), "Expected detail title to match the featured card title.");

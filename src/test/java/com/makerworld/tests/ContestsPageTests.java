@@ -42,7 +42,6 @@ public class ContestsPageTests extends BaseTest {
             .orElseThrow(() -> new AssertionError("Expected a contest card to open."));
 
         openFirstContest();
-        skipIfHumanVerificationPersists("contest detail navigation");
 
         Assert.assertTrue(isContestDetailPageLoaded(), "Expected contest detail page to load.");
         Assert.assertTrue(detailMatchesCard(contestCard, contestHeading()), "Expected the contest detail heading to match the contest card title.");
